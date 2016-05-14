@@ -46,6 +46,9 @@ class StoreHelper(val account: EmailAccountConfig,
         }
     }
 
+    //
+    // Public
+    //
 
     public fun getEmails(folderName: String, limit: Int = 0): List<MessageHelper> {
         val folder = getFolder(folderName)
@@ -58,6 +61,61 @@ class StoreHelper(val account: EmailAccountConfig,
 
         return fetchMessages(messages)
     }
+
+    public fun getEmailsReversed(folderName: String, limit: Int =0): List<MessageHelper> =
+            getEmails(folderName, limit).asReversed()
+
+//    def getEmailsBeforeDate(folderName: String, date: java.util.Date) = {
+//        val olderThan = new ReceivedDateTerm(ComparisonTerm.LT, date)
+//
+//        val emails = folder.search(olderThan)
+//
+//        getEmails(emails, folder)
+//    }
+//
+//    def getEmailsAfterDate(folder: IMAPFolder, date: java.util.Date) = {
+//        val newerThan = new ReceivedDateTerm(ComparisonTerm.GT, date)
+//
+//        val emails = folder.search(newerThan)
+//
+//        getEmails(emails, folder)
+//    }
+//
+//    def getEmailSafe(folder: IMAPFolder, id: Long): Option[Message] = {
+//        Option(folder.getMessageByUID(id))
+//    }
+
+//    def getEmailsByUID(folder: IMAPFolder, ids: util.ArrayList[Number]): Array[Email] = {
+//        val scalaIds = ids.asScala.toArray
+//        getEmailsByUID(folder, scalaIds)
+//    }
+//
+//    def getEmailsByUID(folder: IMAPFolder, ids: Array[Number]): Array[Email] = {
+//        val messages = ids.flatMap{id => getEmailSafe(folder, id.longValue())}
+//        getEmails(messages, folder)
+//    }
+//
+//    def foreachAfterUID(folderName: String, startUID: Long, callback: Callback): Long = {
+//
+//        def get(folder: IMAPFolder) = getEmailsAfterUID(folder, startUID)
+//        foreach(folderName, get, callback)
+//    }
+
+    public fun getEmailsAfterUID(folderName: String, startUID: Long): List<MessageHelper> {
+        val folder = getFolder(folderName)
+
+        val start: Long  =  if (startUID == null || startUID < 0) 0  else startUID
+        val messages = folder.getMessagesByUID(start + 1, UIDFolder.LASTUID)
+
+        fetch(messages, folder)
+
+        // Get rid of final message (JavaMail insists on including the message just before our start id)
+        return messages.map { MessageHelper(it as IMAPMessage)}.filter{it.uid > start}
+    }
+
+    //
+    // Internal
+    //
 
     private fun fetchMessages(messages: Array<Message>) = messages.map { MessageHelper(it as IMAPMessage)}
 

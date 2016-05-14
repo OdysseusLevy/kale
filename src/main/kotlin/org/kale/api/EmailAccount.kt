@@ -14,8 +14,6 @@ class EmailAccount(store: StoreHelper) {
      * @group Functions
      */
     fun forEach(script: ProcessCallback): Unit {
-
-
         def get(folder: IMAPFolder) = store.getEmails(folder)
         store.foreach(Inbox ,get, script.callback)
     }
