@@ -6,11 +6,11 @@ import javax.mail.internet.InternetAddress
 /**
  * @author Odysseus Levy (odysseus.levy@am.sony.com)
  */
-class AddressHelper(val address: Address){
+class AddressHelper(val email: String, val name: String) {
 
-    val ia: InternetAddress = address as InternetAddress
-    val email: String = MailUtils.getOrElse(ia.address, "")
-    val name: String = MailUtils.getOrElse(ia.personal, "")
+    constructor (ia: InternetAddress) : this(MailUtils.getOrElse(ia.address, ""),
+        MailUtils.getOrElse(ia.personal, "") ) {
+    }
 
 
     companion object {
@@ -22,7 +22,7 @@ class AddressHelper(val address: Address){
                 NoOne
             }
             else {
-                AddressHelper(addressArray[0])
+                AddressHelper(addressArray[0] as InternetAddress)
             }
         }
 
@@ -31,7 +31,7 @@ class AddressHelper(val address: Address){
                 listOf(NoOne)
             }
             else {
-                addressArray.map {AddressHelper(it)}
+                addressArray.map {AddressHelper(it as InternetAddress)}
             }
         }
     }
