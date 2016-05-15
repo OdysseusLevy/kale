@@ -1,35 +1,41 @@
 package org.kale.mail
 
 import com.sun.mail.imap.IMAPMessage
+import javax.mail.Address
 import javax.mail.Flags
 import javax.mail.Message
+import javax.mail.internet.MimeMessage
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class MessageHelper(val message: IMAPMessage) {
+class MessageHelper(val message: MimeMessage) {
     init {
-        message.setPeek(true)
+
+        when(message) {
+            is IMAPMessage -> message.setPeek(true)
+        }
     }
+
     companion object {
-        fun safeGet(value: String) = if (value != null) value else ""
+        val none = arrayOf<Address>()
     }
 
     // Values that we prefetch (so quick, because we already have)
 
-    val subject: String = safeGet(message.subject)
+    val subject: String = message.subject ?: ""
     val uid: Long = MailUtils.getUID(message)
 
-    val to = AddressHelper.getFirst(message.getRecipients(Message.RecipientType.TO))
-    val toAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.TO))
-    val ccAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.CC))
-    val bccAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.BCC))
+    val to = AddressHelper.getFirst(message.getRecipients(Message.RecipientType.TO) ?: none)
+    val toAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.TO) ?: none)
+    val ccAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.CC) ?: none)
+    val bccAll = AddressHelper.getAll(message.getRecipients(Message.RecipientType.BCC)?: none)
 
-    val replyTo = AddressHelper.getFirst(message.getReplyTo())
-    val replyToAll = AddressHelper.getAll(message.getReplyTo())
+    val replyTo = AddressHelper.getFirst(message.getReplyTo() ?: none)
+    val replyToAll = AddressHelper.getAll(message.getReplyTo() ?: none)
 
-    val from = AddressHelper.getFirst(message.getFrom())
-    val fromAll = AddressHelper.getAll(message.getFrom())
+    val from = AddressHelper.getFirst(message.getFrom() ?: none)
+    val fromAll = AddressHelper.getAll(message.getFrom() ?: none)
 
     val isRead = message.isSet(Flags.Flag.SEEN)
     val size = message.getSize()

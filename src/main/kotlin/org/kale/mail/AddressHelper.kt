@@ -8,30 +8,34 @@ import javax.mail.internet.InternetAddress
  */
 class AddressHelper(val email: String, val name: String) {
 
-    constructor (ia: InternetAddress) : this(MailUtils.getOrElse(ia.address, ""),
-        MailUtils.getOrElse(ia.personal, "") ) {
-    }
-
-
     companion object {
+
+        fun create(a: Address): AddressHelper {
+            val ia: InternetAddress = a as InternetAddress
+
+            val email = if (ia.address != null) ia.address else ""
+            val name: String = if (ia.personal != null) ia.personal else ""
+
+            return AddressHelper(email, name)
+        }
 
         val NoOne = AddressHelper("None", "None")
 
-        public fun getFirst (addressArray: Array<Address>) = {
+        fun getFirst (addressArray: Array<Address>) = {
             if (addressArray == null || addressArray.count() == 0) {
                 NoOne
             }
             else {
-                AddressHelper(addressArray[0] as InternetAddress)
+                create(addressArray[0] as InternetAddress)
             }
         }
 
-        public fun getAll (addressArray: Array<Address>): List<AddressHelper> {
+        fun getAll (addressArray: Array<Address>): List<AddressHelper> {
             return if (addressArray == null || addressArray.count() == 0) {
                 listOf(NoOne)
             }
             else {
-                addressArray.map {AddressHelper(it as InternetAddress)}
+                addressArray.map {create(it)}
             }
         }
     }

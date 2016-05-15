@@ -6,17 +6,17 @@ import com.sun.mail.imap.IMAPStore
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import javax.mail.*
+import javax.mail.internet.MimeMessage
 
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
 class StoreHelper(val account: EmailAccountConfig,
-                  val storeName: String = "imaps",  // default to ssl connection
+                  val store: IMAPStore = createStore("imaps"),  // default to ssl connection
                   val dryRun: Boolean = false
                   ) {
 
-    val store: IMAPStore = createStore(storeName)
 
     companion object {
         val logger = LogManager.getLogger(StoreHelper::class.java.name)
@@ -117,7 +117,7 @@ class StoreHelper(val account: EmailAccountConfig,
     // Internal
     //
 
-    private fun fetchMessages(messages: Array<Message>) = messages.map { MessageHelper(it as IMAPMessage)}
+    private fun fetchMessages(messages: Array<Message>) = messages.map { MessageHelper(it as MimeMessage)}
 
     private fun getPermission() = if (dryRun) Folder.READ_ONLY else Folder.READ_WRITE
 
