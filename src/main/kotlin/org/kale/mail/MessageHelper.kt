@@ -4,12 +4,11 @@ import com.sun.mail.imap.IMAPMessage
 import javax.mail.Address
 import javax.mail.Flags
 import javax.mail.Message
-import javax.mail.internet.MimeMessage
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class MessageHelper(val message: MimeMessage) {
+class MessageHelper(val message: Message) {
     init {
 
         when(message) {
@@ -21,7 +20,9 @@ class MessageHelper(val message: MimeMessage) {
         val none = arrayOf<Address>()
     }
 
-    // Values that we prefetch (so quick, because we already have)
+    //
+    // Non lazy values. (We prefetch them)
+    //
 
     val subject: String = message.subject ?: ""
     val uid: Long = MailUtils.getUID(message)
@@ -40,7 +41,11 @@ class MessageHelper(val message: MimeMessage) {
     val isRead = message.isSet(Flags.Flag.SEEN)
     val size = message.getSize()
 
-    //TODO
+    //
+    // Lazy values
+    //
+
+    // TODO
 
     // DKIM
 

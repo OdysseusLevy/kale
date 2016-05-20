@@ -4,9 +4,12 @@ import com.sun.mail.imap.IMAPFolder
 import com.sun.mail.imap.IMAPMessage
 import com.sun.mail.imap.IMAPStore
 import org.apache.logging.log4j.LogManager
+import java.time.Instant
 import java.util.*
 import javax.mail.*
 import javax.mail.internet.MimeMessage
+import javax.mail.search.ComparisonTerm
+import javax.mail.search.ReceivedDateTerm
 
 
 /**
@@ -23,15 +26,15 @@ class StoreHelper(val account: EmailAccountConfig,
         val defaultFetchProfile = createDefaultFetchProfile()
         val MoveHeader = "Mailscript-Move"
 
-        private fun fetch(messages: Array<Message>, folder: IMAPFolder): Unit {
+        private fun fetch(messages: Array<Message>, folder: Folder): Unit {
 
             logger.debug("fetching ${messages.count()} email(s) from ${folder.name}")
             folder.fetch(messages, defaultFetchProfile)
             logger.debug("finishing fetch for ${folder.getName()}")
         }
 
-        fun createStore(storeName: String): IMAPStore {
-            val session: Session = Session.getDefaultInstance(Properties(), null)
+        fun createStore(storeName: String,
+                        session: Session = Session.getDefaultInstance(Properties(), null)): IMAPStore {
             return session.getStore(storeName) as IMAPStore
         }
 
@@ -50,7 +53,7 @@ class StoreHelper(val account: EmailAccountConfig,
     // Public
     //
 
-    public fun getEmails(folderName: String, limit: Int = 0): List<MessageHelper> {
+    fun getEmails(folderName: String, limit: Int = 0): List<MessageHelper> {
         val folder = getFolder(folderName)
 
         val start = if (limit <= 0 || limit >= folder.getMessageCount()) 1 else folder.getMessageCount() - limit + 1
@@ -62,24 +65,32 @@ class StoreHelper(val account: EmailAccountConfig,
         return fetchMessages(messages)
     }
 
-    public fun getEmailsReversed(folderName: String, limit: Int =0): List<MessageHelper> =
+    fun getEmailsReversed(folderName: String, limit: Int =0): List<MessageHelper> =
             getEmails(folderName, limit).asReversed()
 
-//    def getEmailsBeforeDate(folderName: String, date: java.util.Date) = {
-//        val olderThan = new ReceivedDateTerm(ComparisonTerm.LT, date)
-//
-//        val emails = folder.search(olderThan)
-//
-//        getEmails(emails, folder)
-//    }
-//
-//    def getEmailsAfterDate(folder: IMAPFolder, date: java.util.Date) = {
-//        val newerThan = new ReceivedDateTerm(ComparisonTerm.GT, date)
-//
-//        val emails = folder.search(newerThan)
-//
-//        getEmails(emails, folder)
-//    }
+    fun getEmailsBeforeDate(folderName: String, date: Instant) = getEmailsBeforeDate(folderName, Date.from(date))
+
+    fun getEmailsBeforeDate(folderName: String, date: Date): List<MessageHelper> {
+
+        val folder = getFolder(folderName)
+        val olderThan = ReceivedDateTerm(ComparisonTerm.LT, date)
+
+        val emails = folder.search(olderThan)
+
+        return getEmails(emails, folder)
+    }
+
+    fun getEmailsAfterDate(folderName: String, instant: Instant) = getEmailsAfterDate(folderName, Date.from(instant))
+
+    fun getEmailsAfterDate(folderName: String, date: Date): List<MessageHelper> {
+
+        val folder = getFolder(folderName)
+        val newerThan = ReceivedDateTerm(ComparisonTerm.GT, date)
+
+        val emails = folder.search(newerThan)
+
+        return getEmails(emails, folder)
+    }
 //
 //    def getEmailSafe(folder: IMAPFolder, id: Long): Option[Message] = {
 //        Option(folder.getMessageByUID(id))
@@ -101,8 +112,15 @@ class StoreHelper(val account: EmailAccountConfig,
 //        foreach(folderName, get, callback)
 //    }
 
-    public fun getEmailsAfterUID(folderName: String, startUID: Long): List<MessageHelper> {
-        val folder = getFolder(folderName)
+    fun getEmailsAfterUID(folderName: String, startUID: Long): List<MessageHelper> =
+            getEmailsAfterUID(getFolder(folderName), startUID)
+
+    fun getEmailsAfterUID(folder: Folder, startUID: Long): List<MessageHelper> {
+
+
+        if (folder !is IMAPFolder)
+            throw imapError(folder)
+
 
         val start: Long  =  if (startUID == null || startUID < 0) 0  else startUID
         val messages = folder.getMessagesByUID(start + 1, UIDFolder.LASTUID)
@@ -110,7 +128,37 @@ class StoreHelper(val account: EmailAccountConfig,
         fetch(messages, folder)
 
         // Get rid of final message (JavaMail insists on including the message just before our start id)
-        return messages.map { MessageHelper(it as IMAPMessage)}.filter{it.uid > start}
+        return messages.map { MessageHelper(it as Message)}.filter{it.uid > start}
+    }
+
+    fun getFolders(): Array<Folder>  {
+        checkStore()
+        return store.getDefaultFolder().list("*")
+    }
+
+    fun hasFolder(name: String): Boolean {
+        val folderName = MailUtils.getFolderName(account, name)
+        return getFolder(name).exists()
+    }
+
+    fun getFolder(folderName: String): Folder {
+        checkStore()
+        val folder = store.getFolder(folderName)
+
+        folder.open(getPermission())
+        return folder
+    }
+
+    fun closeFolder(folder: Folder?) {
+
+        if (folder != null && folder.isOpen()) {
+            try {
+                folder.close(dryRun == false)
+            } catch (e: Exception) {
+                logger.info(e)
+            }
+        }
+
     }
 
     //
@@ -121,14 +169,11 @@ class StoreHelper(val account: EmailAccountConfig,
 
     private fun getPermission() = if (dryRun) Folder.READ_ONLY else Folder.READ_WRITE
 
-    private fun getFolder(folderName: String): IMAPFolder {
-        checkStore()
-        val folder = store.getFolder(folderName) as IMAPFolder
-        folder.open(getPermission())
-        return folder
+    private fun imapError(folder: Folder): Exception {
+        return RuntimeException("folder: ${folder.name} for: ${account.user} does not support UID's")
     }
 
-    private fun getEmails(messages: Array<Message>, folder: IMAPFolder): List<MessageHelper> {
+    private fun getEmails(messages: Array<Message>, folder: Folder): List<MessageHelper> {
         fetch(messages, folder)
         return messages.map { message: Message -> MessageHelper(message as IMAPMessage) }
     }

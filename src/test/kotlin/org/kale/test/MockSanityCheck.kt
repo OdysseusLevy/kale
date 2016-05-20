@@ -15,6 +15,7 @@ class MockSanityCheck {
 
         val mock = MockMailboxHelper()
 
+
         val m = mock.createMessage()
         mock.addMessage(m)
         mock.addMessage(m)
