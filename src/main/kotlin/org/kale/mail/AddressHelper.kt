@@ -21,7 +21,7 @@ class AddressHelper(val email: String, val name: String) {
 
         val NoOne = AddressHelper("None", "None")
 
-        fun getFirst (addressArray: Array<Address>) = {
+        fun getFirst (addressArray: Array<Address>?) = {
             if (addressArray == null || addressArray.count() == 0) {
                 NoOne
             }
@@ -30,7 +30,7 @@ class AddressHelper(val email: String, val name: String) {
             }
         }
 
-        fun getAll (addressArray: Array<Address>): List<AddressHelper> {
+        fun getAll (addressArray: Array<Address>?): List<AddressHelper> {
             return if (addressArray == null || addressArray.count() == 0) {
                 listOf(NoOne)
             }

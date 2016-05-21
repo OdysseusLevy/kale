@@ -1,0 +1,23 @@
+apply plugin: 'scala'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.10.5'
+
+    compile "javax.mail:javax.mail-api:1.5.5"
+    compile "org.apache.logging.log4j:log4j-api:2.5"
+    compile "org.apache.logging.log4j:log4j-core:2.5"
+    compile "com.sun.mail:imap:1.4.5"
+    compile group: 'com.sun.mail', name: 'javax.mail', version: '1.5.5'
+    compile group: 'dnsjava', name: 'dnsjava', version: '2.1.7'
+    testCompile group: 'org.scalatest', name: 'scalatest_2.10', version: '2.2.6'
+}
+
+test.testClassesDir = project.tasks.compileTestScala.destinationDir
+
+
+

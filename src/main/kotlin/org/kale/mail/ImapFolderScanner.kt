@@ -39,12 +39,14 @@ class ImapFolderScanner(val store: StoreHelper,
                         val doFirstRead: Boolean = true
                         ): Runnable {
 
+    var thread: Thread? = null
+
     companion object {
         val logger = LogManager.getLogger(StoreHelper::class.java.name)
         val KEEP_ALIVE_FREQ = Duration.ofMinutes(9).toMillis() // rumor has it that gmail only allows 10 minute connections
         val WaitMillis = Duration.ofSeconds(5).toMillis()
-        }
 
+    }
     // Thread to periodically sent NOOP messages to the server. The mail server will then send a message to us which will break
     // us out of our IDLE
 
@@ -53,7 +55,7 @@ class ImapFolderScanner(val store: StoreHelper,
         companion object {
             val logger = LogManager.getLogger(StoreHelper::class.java.name)
             val noopCommand = object : IMAPFolder.ProtocolCommand {
-                override fun doCommand(protocol: IMAPProtocol): Object? {
+                override fun doCommand(protocol: IMAPProtocol): Any? {
                     protocol.simpleCommand("NOOP", null)
                     return null
                 }
@@ -85,6 +87,15 @@ class ImapFolderScanner(val store: StoreHelper,
 
         logger.debug("Thread ${getName()} finished")
         }
+    }
+
+    fun startScanning() {
+        thread = Thread(this, folderName + "-Scanner")
+        thread?.start()
+    }
+
+    fun stopScanning() {
+        thread?.interrupt()
     }
 
     fun processLatest(): Long {
@@ -143,8 +154,6 @@ class ImapFolderScanner(val store: StoreHelper,
                 timeOut = null
 
                 processLatest()
-
-                store.closeFolder(folder)
             }
             catch (closed: FolderClosedException) {
                 logger.warn(" Folder ${folderName} is closed.", closed)

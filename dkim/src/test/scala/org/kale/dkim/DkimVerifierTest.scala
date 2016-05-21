@@ -86,11 +86,11 @@ class DkimVerifierTest extends FlatSpec with Matchers {
     dkim.isDefined should be (true)
   }
 
-  "verifyHeaders" should "correctly verifyHeaders valid dkim headers" in {
+  "verifyOnlyHeaders" should "correctly verify valid dkim headers" in {
     val dnsHelper = new DnsHelperStub(Array(dnsRecord))
 
     val lines = rawHeaders.toIterator
-    val result = DkimVerifier.verifyHeaders(lines, dnsHelper)
+    val result = DkimVerifier.verifyHeadersIterator(lines, dnsHelper)
     result.isDefined() should be (true)
   }
 

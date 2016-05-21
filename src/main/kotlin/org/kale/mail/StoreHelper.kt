@@ -13,7 +13,7 @@ import javax.mail.search.ReceivedDateTerm
 
 
 /**
- * @author Odysseus Levy (odysseus@cosmosgame.org)
+ *
  */
 class StoreHelper(val account: EmailAccountConfig,
                   val store: IMAPStore = createStore("imaps"),  // default to ssl connection
@@ -53,6 +53,11 @@ class StoreHelper(val account: EmailAccountConfig,
     // Public
     //
 
+    fun scanFolder(folderName: String, callback: ProcessCallback, startUID: Long = -1, doFirstRead: Boolean = true): Unit {
+        checkStore()
+        ImapFolderScanner(this, folderName, callback, startUID, doFirstRead).startScanning()
+    }
+
     fun getEmails(folderName: String, limit: Int = 0): List<MessageHelper> {
         val folder = getFolder(folderName)
 
@@ -91,6 +96,53 @@ class StoreHelper(val account: EmailAccountConfig,
 
         return getEmails(emails, folder)
     }
+
+    fun moveTo(toFolderName: String, m: MessageHelper) {
+
+        if (dryRun) {
+            logger.info("DRY RUN -- moving message from: ${m.from} subject: ${m.subject} to folder: $toFolderName")
+            return
+        }
+
+        val fromFolder = m.message.folder
+        val toFolder = store.getFolder(toFolderName)
+        if (!toFolder.exists()){
+            logger.warn("ignoring request to move message to folder that does not exist: $toFolderName")
+            return
+        }
+
+        try {
+            toFolder.open(Folder.READ_WRITE)
+
+            val newMessage = MimeMessage(m.message as MimeMessage)
+
+            newMessage.removeHeader(MoveHeader)
+            newMessage.addHeader(MoveHeader, toFolderName)
+
+            val messageArray = arrayOf(newMessage)
+            logger.info("moving mail from: ${m.from} subject: ${m.subject} to folder: $toFolderName")
+            toFolder.appendMessages(messageArray)
+            m.message.setFlag(Flags.Flag.DELETED, true)
+        } catch (e: Throwable){
+            logger.warn("failed moving message to folder: $toFolderName", e)
+        }
+
+        closeFolder(toFolder)
+    }
+
+    fun delete(permanent: Boolean, m: MessageHelper): Unit {
+
+        if (dryRun) {
+            logger.info("DRY RUN -- deleting message from: ${m.from} subject: ${m.subject}")
+            return
+        }
+
+        if (permanent)
+            m.message.setFlag(Flags.Flag.DELETED, true)
+        else
+            moveTo(MailUtils.trashFolder(account), m)
+    }
+
 //
 //    def getEmailSafe(folder: IMAPFolder, id: Long): Option[Message] = {
 //        Option(folder.getMessageByUID(id))
@@ -122,13 +174,13 @@ class StoreHelper(val account: EmailAccountConfig,
             throw imapError(folder)
 
 
-        val start: Long  =  if (startUID == null || startUID < 0) 0  else startUID
+        val start: Long  =  if (startUID < 0) 0  else startUID
         val messages = folder.getMessagesByUID(start + 1, UIDFolder.LASTUID)
 
         fetch(messages, folder)
 
         // Get rid of final message (JavaMail insists on including the message just before our start id)
-        return messages.map { MessageHelper(it as Message)}.filter{it.uid > start}
+        return messages.map { MessageHelper(it as MimeMessage)}.filter{it.uid > start}
     }
 
     fun getFolders(): Array<Folder>  {
@@ -137,7 +189,6 @@ class StoreHelper(val account: EmailAccountConfig,
     }
 
     fun hasFolder(name: String): Boolean {
-        val folderName = MailUtils.getFolderName(account, name)
         return getFolder(name).exists()
     }
 

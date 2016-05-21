@@ -43,9 +43,9 @@ object DkimVerifier {
    * @param email JavaMail email
    * @param dnsHelper (optional) This enables us to query DNS records
    */
-  def verify(email: MimeMessage, dnsHelper: DnsHelper = new DnsHelper): DkimResult = {
+  def verify(email: MimeMessage, dnsHelper: DnsHelper): DkimResult = {
 
-    val headerResult = verifyHeaders(email, dnsHelper)
+    val headerResult = verifyOnlyHeaders(email, dnsHelper)
 
     if (!headerResult.isDefined())
       return headerResult
@@ -59,12 +59,12 @@ object DkimVerifier {
   /**
    * Verify just the headers -- don't do the body yet
    */
-  def verifyHeaders(email: MimeMessage, dnsHelper: DnsHelper = new DnsHelper): DkimResult = {
+  def verifyOnlyHeaders(email: MimeMessage, dnsHelper: DnsHelper): DkimResult = {
     val headers = email.getAllHeaderLines.asScala.asInstanceOf[Iterator[String]]
-    verifyHeaders(headers, dnsHelper)
+    verifyHeadersIterator(headers, dnsHelper)
   }
 
-  def verifyHeaders(headers: Iterator[String], dnsHelper: DnsHelper): DkimResult = {
+  def verifyHeadersIterator(headers: Iterator[String], dnsHelper: DnsHelper): DkimResult = {
 
     val headerStacks = buildHeaderStacks(headers)
     val dkim = getDkim(headerStacks)
