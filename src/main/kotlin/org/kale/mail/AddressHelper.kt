@@ -21,8 +21,8 @@ class AddressHelper(val email: String, val name: String) {
 
         val NoOne = AddressHelper("None", "None")
 
-        fun getFirst (addressArray: Array<Address>?) = {
-            if (addressArray == null || addressArray.count() == 0) {
+        fun getFirst (addressArray: Array<Address>?): AddressHelper {
+            return if (addressArray == null || addressArray.count() == 0) {
                 NoOne
             }
             else {

@@ -1,23 +1,23 @@
 package org.kale.api
 
+import org.kale.mail.MessageHelper
+
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class Email(val subject: String,
-            val toAll: Array<Who>,
-            val ccAll: Array<Who>,
-            val bccAll: Array<Who>,
-            val replyToAll: Array<Who>,
-            val fromAll: Array<Who>,
-            val isRead: Boolean,
-            val uid: Long,
-            val folder: String,
-            val headers: Map<String, String>,
-            val size: Int
-)
-
+class Email(message: MessageHelper)
 {
-
+//    val subject: String,
+//    val toAll: Array<Who>,
+//    val ccAll: Array<Who>,
+//    val bccAll: Array<Who>,
+//    val replyToAll: Array<Who>,
+//    val fromAll: Array<Who>,
+//    val isRead: Boolean,
+//    val uid: Long,
+//    val folder: String,
+//    val headers: Map<String, String>,
+//    val size: Int
     //
     // Lazy Properties
     //

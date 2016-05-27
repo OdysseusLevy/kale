@@ -128,7 +128,7 @@ object MimePart {
      *
      * @return null if no text is found
      */
-    fun getBodyText(part: Part): String? {
+    fun getBodyText(part: Part): String {
 
         val content = part.content
         return when (content) {
