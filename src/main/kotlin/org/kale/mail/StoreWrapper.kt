@@ -1,11 +1,15 @@
 package org.kale.mail
 
 import com.sun.mail.imap.IMAPFolder
+import com.sun.mail.imap.IMAPMessage
 import com.sun.mail.imap.IMAPStore
 import org.apache.logging.log4j.LogManager
+import java.time.Instant
 import java.util.*
 import javax.mail.*
 import javax.mail.internet.MimeMessage
+import javax.mail.search.ComparisonTerm
+import javax.mail.search.ReceivedDateTerm
 
 
 /**
@@ -16,36 +20,6 @@ class StoreWrapper(val account: EmailAccountConfig,
                    val dryRun: Boolean = false
                   ) {
 
-
-    companion object {
-        val logger = LogManager.getLogger(StoreWrapper::class.java.name)
-        val defaultFetchProfile = createDefaultFetchProfile()
-        val MoveHeader = "Mailscript-Move"
-
-        private fun fetch(messages: Array<Message>, folder: Folder): Array<Message> {
-
-            logger.debug("fetching ${messages.count()} email(s) from ${folder.name}")
-            folder.fetch(messages, defaultFetchProfile)
-            logger.debug("finishing fetch for ${folder.getName()}")
-
-            return messages
-        }
-
-        fun createStore(storeName: String,
-                        session: Session = Session.getDefaultInstance(Properties(), null)): IMAPStore {
-            return session.getStore(storeName) as IMAPStore
-        }
-
-        fun createDefaultFetchProfile(): FetchProfile {
-            val fp = FetchProfile()
-            fp.add(FetchProfile.Item.ENVELOPE)
-            fp.add(FetchProfile.Item.FLAGS)
-            fp.add(FetchProfile.Item.SIZE)
-            fp.add(UIDFolder.FetchProfileItem.UID)
-            fp.add(IMAPFolder.FetchProfileItem.HEADERS) //load all headers
-            return fp
-        }
-    }
 
     //
     // Public
@@ -58,57 +32,63 @@ class StoreWrapper(val account: EmailAccountConfig,
         ImapFolderScanner(this, folderName, callback, startUID, doFirstRead).startScanning()
     }
 
-    fun forEach(folderName: String, callback: MailCallback, limit: Int = 0, oldestFirst: Boolean = false) {
-
-        val folder = getFolder(folderName)
-        try {
+    fun getMessages(folderName: String, limit: Int = 0): List<MessageHelper>
+    {
+        return getMessages(folderName, { folder ->
             val start = if (limit <= 0 || limit >= folder.getMessageCount()) 1 else folder.getMessageCount() - limit + 1
             val count = folder.getMessageCount()
 
-            val messages = folder.getMessages(start, count)
-
-            if (oldestFirst)
-                messages.reverse()
-
-            fetch(messages, folder)
-            messages.forEach { m -> callback.run(MessageHelper.create(m as MimeMessage, this)) }
-        } finally {
-            closeFolder(folder)
-        }
+            folder.getMessages(start, count)
+        })
     }
 
-    fun forEachAfterUID(folderName: String, startUID: Long, callback: MailCallback): Long {
+    fun getMessagesAfterUID(folderName: String, start: Long) =
+        getMessagesByUIDRange(folderName, start + 1)
 
-        val folder = getFolder(folderName)
-
-        var lastFound = startUID
-        try {
+    fun getMessagesByUIDRange(folderName: String, startUID: Long,
+                            endUID: Long = UIDFolder.LASTUID): List<MessageHelper>
+    {
+        return getMessages(folderName, {folder ->
             if (folder !is IMAPFolder)
                 throw imapError(folder)
 
-            val messages = folder.getMessagesByUID(startUID + 1, UIDFolder.LASTUID)
-
-            fetch(messages, folder)
-
-
-            // Get rid of final message (JavaMail insists on including the message just before our start id)
-            //TODO review this filter
-            messages.map { MessageHelper.create(it as MimeMessage, this) }.filter { it.uid > startUID }.forEach {
-                lastFound = it.uid
-                callback.run(it) }
-        } finally {
-            closeFolder(folder)
-        }
-
-        return lastFound
+            folder.getMessagesByUID(startUID, endUID)
+        })
     }
 
-    internal fun getMessageByUID(folder: Folder, uid: Long): MimeMessage {
+    fun getEmailsBeforeDate(folderName: String, date: Instant) =
+            getEmailsBeforeDate(folderName, Date.from(date))
 
-        if (folder !is IMAPFolder)
-            throw imapError(folder)
+    fun getEmailsBeforeDate(folderName: String, date: Date): List<MessageHelper> {
 
-        return folder.getMessageByUID(uid) as MimeMessage
+        val olderThan = ReceivedDateTerm(ComparisonTerm.LT, date)
+
+        return getMessages(folderName, { folder ->
+            fetch(folder.search(olderThan), folder)
+        })
+
+    }
+
+    fun getEmailsAfterDate(folderName: String, instant: Instant) =
+            getEmailsAfterDate(folderName,Date.from(instant))
+
+    fun getEmailsAfterDate(folderName: String, date: Date): List<MessageHelper> {
+
+        val newerThan = ReceivedDateTerm(ComparisonTerm.GT, date)
+        return getMessages(folderName, { folder ->
+            fetch(folder.search(newerThan), folder)
+        })
+    }
+
+    fun getEmailsByUID(folderName: String, ids: List<Long>): List<MessageHelper> {
+
+        return getMessages(folderName, { folder ->
+            if (folder !is IMAPFolder)
+                throw imapError(folder)
+
+            folder.getMessagesByUID(ids.toLongArray())
+
+        })
     }
 
     fun moveTo(toFolderName: String, m: MessageHelper) {
@@ -171,31 +151,9 @@ class StoreWrapper(val account: EmailAccountConfig,
         }
     }
 
-//
-//    def getEmailSafe(folder: IMAPFolder, id: Long): Option[Message] = {
-//        Option(folder.getMessageByUID(id))
-//    }
-
-//    def getEmailsByUID(folder: IMAPFolder, ids: util.ArrayList[Number]): Array[Email] = {
-//        val scalaIds = ids.asScala.toArray
-//        getEmailsByUID(folder, scalaIds)
-//    }
-//
-//    def getEmailsByUID(folder: IMAPFolder, ids: Array[Number]): Array[Email] = {
-//        val messages = ids.flatMap{id => getEmailSafe(folder, id.longValue())}
-//        getEmails(messages, folder)
-//    }
-//
-//    def foreachAfterUID(folderName: String, startUID: Long, callback: Callback): Long = {
-//
-//        def get(folder: IMAPFolder) = getEmailsAfterUID(folder, startUID)
-//        foreach(folderName, get, callback)
-//    }
-
-
     fun getFolders(): List<FolderWrapper>  {
         checkStore()
-        return store.getDefaultFolder().list("*").map{f -> FolderWrapper(f, this)}
+        return store.getDefaultFolder().list("*").map{f -> FolderWrapper.create(f, this)}
     }
 
     fun hasFolder(name: String): Boolean {
@@ -205,6 +163,33 @@ class StoreWrapper(val account: EmailAccountConfig,
     //
     // Internal
     //
+
+    internal fun getMessageByUID(folder: Folder, uid: Long): MimeMessage {
+
+        if (folder !is IMAPFolder)
+            throw imapError(folder)
+
+        return folder.getMessageByUID(uid) as MimeMessage
+    }
+
+    internal fun <T>doWithFolder(folderName: String, lambda: (Folder) -> T): T {
+        val folder = getFolder(folderName)
+        try {
+            return lambda(folder)
+        } finally {
+            closeFolder(folder)
+        }
+    }
+
+    fun getMessages(folderName: String, lambda: (Folder) -> Array<Message>): List<MessageHelper>
+    {
+        return doWithFolder(folderName, { folder ->
+            val messages = lambda(folder)
+
+            fetch(messages, folder)
+            messages.map{MessageHelper.create(it, this)}
+        })
+    }
 
     internal fun getFolder(folderName: String): Folder {
         checkStore()
@@ -250,6 +235,36 @@ class StoreWrapper(val account: EmailAccountConfig,
             return true
         } else {
             return false
+        }
+    }
+
+    companion object {
+        val logger = LogManager.getLogger(StoreWrapper::class.java.name)
+        val defaultFetchProfile = createDefaultFetchProfile()
+        val MoveHeader = "Mailscript-Move"
+
+        private fun fetch(messages: Array<Message>, folder: Folder): Array<Message> {
+
+            logger.debug("fetching ${messages.count()} email(s) from ${folder.name}")
+            folder.fetch(messages, defaultFetchProfile)
+            logger.debug("finishing fetch for ${folder.getName()}")
+
+            return messages
+        }
+
+        fun createStore(storeName: String,
+                        session: Session = Session.getDefaultInstance(Properties(), null)): IMAPStore {
+            return session.getStore(storeName) as IMAPStore
+        }
+
+        fun createDefaultFetchProfile(): FetchProfile {
+            val fp = FetchProfile()
+            fp.add(FetchProfile.Item.ENVELOPE)
+            fp.add(FetchProfile.Item.FLAGS)
+            fp.add(FetchProfile.Item.SIZE)
+            fp.add(UIDFolder.FetchProfileItem.UID)
+            fp.add(IMAPFolder.FetchProfileItem.HEADERS) //load all headers
+            return fp
         }
     }
 }

@@ -36,7 +36,11 @@ class MessageHelper(
 ) {
     companion object {
 
-        fun create(message: MimeMessage, store: StoreWrapper): MessageHelper {
+        fun create(message: Message, store: StoreWrapper): MessageHelper {
+
+            if (message !is MimeMessage)
+                throw RuntimeException("unexpected message type: " + message)
+
             when (message) {
                 is IMAPMessage -> message.setPeek(true)
             }
@@ -189,9 +193,10 @@ class MessageHelper(
     internal val message: MimeMessage by lazy { getCachedMessage()}
 
     internal fun getCachedMessage(): MimeMessage {
-        val folder = store.getFolder(folderName)
-        try {
-            val m  = store.getMessageByUID(folder, uid)
+
+        return store.doWithFolder(folderName, { folder ->
+
+            val m = store.getMessageByUID(folder, uid)
             when (m) {
                 is IMAPMessage -> {
                     m.setPeek(true)
@@ -199,10 +204,8 @@ class MessageHelper(
                 }
             }
             m.getContent()  // forces a parse() call
-            return m
-        } finally {
-            store.closeFolder(folder)
-        }
+            m
+        })
     }
 
 }

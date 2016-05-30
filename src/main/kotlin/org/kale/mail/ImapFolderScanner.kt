@@ -100,11 +100,21 @@ class ImapFolderScanner(val store: StoreWrapper,
         thread?.interrupt()
     }
 
+    fun processMessages(): Long {
+        val messages = store.getMessagesAfterUID(folderName, startUID)
+        callback.run(messages)
+
+        if (messages.isEmpty())
+            return startUID
+        else
+            return messages.get(messages.lastIndex).uid
+    }
+
     override fun run() {
 
         // Run the callback right away
         if (doFirstRead) {
-            startUID = store.forEachAfterUID(folderName, startUID, callback)
+            startUID = processMessages()
         }
 
         // Now start our IDLE
@@ -138,7 +148,7 @@ class ImapFolderScanner(val store: StoreWrapper,
                 timeOut.interrupt()
                 timeOut = null
 
-                startUID = store.forEachAfterUID(folderName, startUID, callback)
+                startUID = processMessages()
             }
             catch (closed: FolderClosedException) {
                 logger.warn(" Folder ${folderName} is closed.", closed)

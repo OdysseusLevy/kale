@@ -49,12 +49,12 @@ class TestStoreHelper {
         // Test searching by date
         //TODO Update mocks to support setting received date
 
-//        emails = storeHelper.getEmails("Inbox", 2)
-//
-//        assertEquals(2, emails.count())
-//
-//        emails = storeHelper.getEmailsAfterDate("Inbox", Instant.now())
-//        assertEquals(1, emails.count())
+        var emails = storeHelper.getEmails("Inbox", 2)
+
+        assertEquals(2, emails.count())
+
+        emails = storeHelper.getEmailsAfterDate("Inbox", Instant.now())
+        assertEquals(1, emails.count())
 
 
     }

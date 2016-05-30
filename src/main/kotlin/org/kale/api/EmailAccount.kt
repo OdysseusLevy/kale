@@ -9,18 +9,6 @@ import kotlin.comparisons.reverseOrder
  */
 class EmailAccount(val store: StoreWrapper) {
 
-//    /**
-//     * Create an email object that can be sent
-//     * @group Functions
-//     */
-//    fun newMail() = EmailBean(bean.user)
-//
-//    /**
-//     * Send an email
-//     * @param message email to send
-//     * @group Functions
-//     */
-//    fun send(message: EmailBean) = MailUtils.sendMessage(bean, message)
 
     companion object {
         val runLambda: (messages: List<MessageHelper>, lambda: MailLambda) -> Unit = { messages, lambda ->
@@ -30,9 +18,9 @@ class EmailAccount(val store: StoreWrapper) {
 
     class RunHelper(val lambda: MailLambda): MailCallback {
         
-        override fun run(latest: MessageHelper) {
-            lambda.run(Email(latest))
-        }    
+        override fun run(latest: List<MessageHelper>) {
+            runLambda(latest, lambda)
+        }
     }
 
     /**
@@ -63,8 +51,8 @@ class EmailAccount(val store: StoreWrapper) {
      * Runs a script against all inbox emails
      * @group Functions
      */
-    fun foreach(lambda: MailLambda) {
-        foreach("Inbox", lambda)
+    fun forEach(lambda: MailLambda) {
+        forEach("Inbox", lambda)
     }
 
     /**
@@ -74,8 +62,8 @@ class EmailAccount(val store: StoreWrapper) {
      * @param folderName folder to read in
      *  @group Functions
      */
-    fun foreach(folderName: String, lambda: MailLambda) {
-        foreach(folderName, -1, lambda)
+    fun forEach(folderName: String, lambda: MailLambda) {
+        forEach(folderName, -1, lambda)
     }
 
     /**
@@ -85,8 +73,8 @@ class EmailAccount(val store: StoreWrapper) {
      * @param script closure to run against each
      *  @group Functions
      */
-    fun foreach(limit: Int, lambda: MailLambda) {
-        foreach("Inbox", limit, lambda)
+    fun forEach(limit: Int, lambda: MailLambda) {
+        forEach("Inbox", limit, lambda)
     }
 
     /**
@@ -96,11 +84,14 @@ class EmailAccount(val store: StoreWrapper) {
      * @param script
      *  @group Functions
      */
-    fun foreach(folderName: String, limit: Int, lambda: MailLambda) {
+    fun forEach(folderName: String, limit: Int, lambda: MailLambda) {
 
-        store.forEach(folderName, RunHelper(lambda), limit)
+        val messages = store.getMessages(folderName, limit)
+        runLambda(messages, lambda)
     }
 
+    fun forEachReversed(folderName: String, lambda: MailLambda) =
+        forEachReversed(folderName, -1, lambda)
     /**
      * Runs a script against every email in a given folder
      * order is newest to oldest
@@ -108,8 +99,9 @@ class EmailAccount(val store: StoreWrapper) {
      * @param folderName
      * @param script
      */
-    fun foreachReversed(folderName: String, lambda: MailLambda) {
-        store.forEach(folderName, RunHelper(lambda), oldestFirst = true)
+    fun forEachReversed(folderName: String, limit: Int = -1, lambda: MailLambda) {
+        val messages = store.getMessages(folderName, limit)
+        runLambda(messages, lambda)
     }
 
     /**
@@ -119,8 +111,10 @@ class EmailAccount(val store: StoreWrapper) {
      * @param date date before which we are interested
      * @param script closure to run against each
      */
-    fun foreachBefore(folderName: String, date: Instant, lambda: MailLambda) {
-        run(folderName, {folder -> folder.getEmailsBeforeDate(date) }, lambda)
+    fun forEachBefore(folderName: String, date: Instant, lambda: MailLambda) {
+
+        val messages = store.getEmailsBeforeDate(folderName, date)
+        runLambda(messages, lambda)
     }
 
     /**
@@ -130,8 +124,9 @@ class EmailAccount(val store: StoreWrapper) {
      * @param date date after which we are interested
      * @param script closure to run against each
      */
-    fun foreachAfter(folderName: String, date: Instant, lambda: MailLambda) {
-        run(folderName, {folder -> folder.getEmailsAfterDate(date) }, lambda)
+    fun forEachAfter(folderName: String, date: Instant, lambda: MailLambda) {
+        val messages = store.getEmailsAfterDate(folderName, date)
+        runLambda(messages, lambda)
     }
 
     //
@@ -176,6 +171,19 @@ class EmailAccount(val store: StoreWrapper) {
 //        store.foreach(Inbox, get, script.callback)
 //    }
 
+    //    /**
+//     * Create an email object that can be sent
+//     * @group Functions
+//     */
+//    fun newMail() = EmailBean(bean.user)
+//
+//    /**
+//     * Send an email
+//     * @param message email to send
+//     * @group Functions
+//     */
+//    fun send(message: EmailBean) = MailUtils.sendMessage(bean, message)
+
     /**
      * Run a script against emails from a given list of ids and folder
      *
@@ -193,12 +201,4 @@ class EmailAccount(val store: StoreWrapper) {
     // Private
     //
 
-    fun run(folderName: String, getter: (FolderWrapper) -> List<MessageHelper>, lambda: MailLambda) {
-        val folder = store.getFolder(folderName)
-        try {
-            runLambda(getter(folder), lambda)
-        } finally {
-            folder.close()
-        }
-    }
 }
