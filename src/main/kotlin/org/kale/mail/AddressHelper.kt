@@ -4,7 +4,7 @@ import javax.mail.Address
 import javax.mail.internet.InternetAddress
 
 /**
- * @author Odysseus Levy (odysseus.levy@am.sony.com)
+ * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
 class AddressHelper(val email: String, val name: String) {
 

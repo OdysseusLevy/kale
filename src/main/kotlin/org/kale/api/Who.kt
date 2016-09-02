@@ -1,6 +1,8 @@
 package org.kale.api
 
 /**
- * @author Odysseus Levy (odysseus.levy@am.sony.com)
+ * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-data class Who(val email: String, val name: String);
+data class Who(val email: String, val name: String, val tags: Tags) : Tags by tags {
+
+}

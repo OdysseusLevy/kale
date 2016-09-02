@@ -5,7 +5,7 @@ import java.time.Instant
 import kotlin.comparisons.reverseOrder
 
 /**
- * @author Odysseus Levy (odysseus.levy@am.sony.com)
+ * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
 class EmailAccount(val store: StoreWrapper) {
 
