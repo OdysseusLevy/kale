@@ -106,8 +106,6 @@ class StoreWrapper(val account: EmailAccountConfig,
                 return
             }
 
-            toFolder.open(Folder.READ_WRITE)
-
             val message = getMessageByUID(fromFolder, m.uid)
             val newMessage = MimeMessage(message)
 
