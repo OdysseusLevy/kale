@@ -1,27 +1,50 @@
 package org.kale.api
 
-import org.kale.mail.*
+import org.kale.mail.FolderWrapper
+import org.kale.mail.MailCallback
+import org.kale.mail.MessageHelper
+import org.kale.mail.StoreWrapper
 import java.time.Instant
-import kotlin.comparisons.reverseOrder
+import javax.mail.UIDFolder
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class EmailAccount(val store: StoreWrapper) {
+class EmailAccount(val store: StoreWrapper, val tags: Tags) {
 
-
-    companion object {
-        val runLambda: (messages: List<MessageHelper>, lambda: MailLambda) -> Unit = { messages, lambda ->
-            messages.forEach { message -> lambda.run(Email(message)) }
-        }
+    fun runLambda(messages: List<MessageHelper>, lambda: MailLambda): Unit {
+        messages.forEach { message -> lambda.run(Email(message, tags)) }
     }
 
-    class RunHelper(val lambda: MailLambda): MailCallback {
+    class RunHelper(val lambda: MailLambda, val tags: Tags): MailCallback {
         
         override fun run(latest: List<MessageHelper>) {
-            runLambda(latest, lambda)
+            latest.forEach { message -> lambda.run(Email(message, tags)) }
         }
     }
+
+    //
+    // Get messages
+    //
+
+    fun getMessages() = store.getMessages("Inbox", 0)
+    fun getMessages(limit: Int) = store.getMessages("Inbox", limit)
+    fun getMessages(folderName: String) = store.getMessages(folderName, 0)
+    fun getMessages(folderName: String, limit: Int) = store.getMessages(folderName, limit)
+
+    fun getMessagesBefore(date: Instant) = store.getEmailsBeforeDate("Inbox", date)
+    fun getMessagesBefore(folderName: String, date: Instant) = store.getEmailsBeforeDate(folderName, date)
+
+    fun getMessagesAfter(date: Instant) = store.getEmailsAfterDate("Inbox", date)
+    fun getMessagesAfter(folderName: String, date: Instant) = store.getEmailsAfterDate(folderName, date)
+
+    fun getMessagesAfterUID(folderName: String, start: Long) = store.getMessagesAfterUID(folderName, start)
+    fun getMessagesByUIDRange(folderName: String, startUID: Long, endUID: Long): List<MessageHelper> {
+        return 
+    }
+    //
+    // Scanning
+    //
 
     /**
      * Continuously scan the folder waiting for new messages to appear.
@@ -33,7 +56,7 @@ class EmailAccount(val store: StoreWrapper) {
      * @group Functions
      */
     fun scanFolder(folderName: String, lambda: MailLambda) {
-        store.scanFolder(folderName, RunHelper(lambda))
+        store.scanFolder(folderName, RunHelper(lambda, tags))
     }
 
     /**
@@ -44,7 +67,7 @@ class EmailAccount(val store: StoreWrapper) {
      * @param scanner user supplied callback to handle the emails
      */
     fun scanFolder(folderName: String, doFirstRead: Boolean, lambda: MailLambda) {
-        store.scanFolder(folderName, RunHelper(lambda), -1, doFirstRead)
+        store.scanFolder(folderName, RunHelper(lambda, tags), -1, doFirstRead)
     }
 
     /**

@@ -49,9 +49,4 @@ interface Tags {
      */
     fun getTags(): Set<String>
 
-    /**
-     * Determine if the given email is valid
-     * @group Functions
-     */
-    fun isValid(): Boolean
 }
