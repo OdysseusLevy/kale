@@ -1,7 +1,6 @@
 package org.kale.mail
 
 import com.sun.mail.imap.IMAPFolder
-import com.sun.mail.imap.IMAPMessage
 import com.sun.mail.imap.IMAPStore
 import org.apache.logging.log4j.LogManager
 import java.time.Instant
@@ -19,8 +18,6 @@ class StoreWrapper(val account: EmailAccountConfig,
                    val store: IMAPStore = createStore("imaps"),  // default to ssl connection
                    val dryRun: Boolean = false
                   ) {
-
-
     //
     // Public
     //
@@ -125,7 +122,6 @@ class StoreWrapper(val account: EmailAccountConfig,
             closeFolder(fromFolder)
             closeFolder(toFolder)
         }
-
     }
 
     fun delete(permanent: Boolean, m: MessageHelper): Unit {

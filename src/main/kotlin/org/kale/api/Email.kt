@@ -1,146 +1,159 @@
 package org.kale.api
 
+import org.kale.dkim.DkimResult
 import org.kale.mail.MessageHelper
+import java.time.Instant
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class Email(message: MessageHelper)
+class Email(val helper: MessageHelper, val tags: Tags)
 {
-//    val subject: String,
-//    val toAll: Array<Who>,
-//    val ccAll: Array<Who>,
-//    val bccAll: Array<Who>,
-//    val replyToAll: Array<Who>,
-//    val fromAll: Array<Who>,
-//    val isRead: Boolean,
-//    val uid: Long,
-//    val folder: String,
-//    val headers: Map<String, String>,
-//    val size: Int
     //
-    // Lazy Properties
+    // Email basic fields
     //
+
+    val subject: String = helper.subject
+    val isRead: Boolean = helper.isRead
+    val uid: Long = helper.uid
+    val folder: String = helper.folderName
+    val headers: Map<String, String> = helper.headers
+    val size: Int = helper.size
+
+    //
+    // Addresses
+    //
+
+    val toAll: Array<Who> = Who.create(helper.toAll, tags)
+    val ccAll: Array<Who> = Who.create(helper.ccAll, tags)
+    val bccAll: Array<Who> = Who.create(helper.bccAll, tags)
+    val replyToAll: Array<Who> = Who.create(helper.replyToAll, tags)
+    val fromAll: Array<Who>  = Who.create(helper.fromAll, tags)
+
+    /**
+     * Typically there is only one address in the "to" field. If it is OK to assume this, then this field
+     * is more convenient than toAll
+     */
+    val to: Who = Who.create(helper.to, tags)
+
+    /**
+     * Typically there is only one address in the "from" field. If it is OK to assume this, then this field
+     * is more convenient than fromAll
+     */
+    val from: Who = Who.create(helper.from, tags)
 
     /**
      * Body Text
      * @note -- this is a slower operation
      */
-    //fun getBody(): String = helper.body
-
-
-    /**
-     * Attachments
-     */
-    //fun getAttachments(): Array[Attachment] = helper.attachments
-
+    fun getBody(): String { return helper.body }
 
     //
     // DKIM stuff
     //
-
-    //TODO
-
-    /**
-     * Do a full DKIM verification of both the headers and the body
-     * @return DkimResult
-     */
-    //fun getDkim: DkimInfo = DkimInfo(helper.dkimResult)
 
     /**
      * Do a DKIM verification on only the headers.
      *
      * This will be significantly faster than do a full verify, so sometimes it is preferred
      */
-    //fun getDkimHeader = DkimInfo(helper.dkimHeader)
+    val dkimHeader: DkimResult = helper.dkimHeader
 
     /**
-     * Same as getDkimHeader() except that we just want to know what the verified host is
-     * @return if valid DKIM signature, the dkim host is returned else returns empty string
+     * Do a full DKIM verification of both the headers and the body
+     * @return DkimResult
      */
-    //fun getVerifiedHost(): String = helper.verifiedHost
+    fun getDkim(): DkimResult {return helper.dkimResult}
 
     /**
      * Is the host verified by the DKIM standard?
      * Very useful for detecting spam
      */
-    //fun getIsVerifiedHost(): Boolean = helper.verifiedHost != "" //For groovy java bean
+    val isVerifiedHost: Boolean = helper.verifiedHost != "" //For groovy java bean
+
+    /**
+     * Same as getDkimHeader() except that we just want to know what the verified host is
+     * @return if valid DKIM signature, the dkim host is returned else returns empty string
+     */
+    val verifiedHost: String = helper.verifiedHost
 
     //
     // Time stuff
     //
 
-    //TODO
-
     /**
      * When was this email received
      */
-    //fun getReceived(): Date = helper.received
+    val received: Instant = helper.received
 
     /**
      * How many weeks ago was this message received?
      */
-    //fun getWeeksAgo(): Long = helper.weeksAgo
+    val weeksAgo: Long = helper.weeksAgo
 
     /**
-     * Howe may days ago was this message received?
+     * How may days ago was this message received?
      */
-    //fun getDaysAgo(): Long = helper.daysAgo
+    val daysAgo: Long = helper.daysAgo
 
     /**
      * How many hours ago was this message received
      */
-    //fun getHoursAgo(): Long = helper.hoursAgo
+    val hoursAgo: Long = helper.hoursAgo
 
     //
     // Headers
     //
 
-    //TODO
-
     /**
      * If this email was moved to a folder using Emailscript, a special header is added
-     * You can use this property to what folder this email was moved from
+     * You can use this property to determine folder this email was moved from
      */
-    //fun getMoveHeader(): String = helper.moveHeader.getOrElse("")
+    val moveHeader: String = helper.moveHeader
 
-    //fun hasHeader(name: String): Boolean = helper.hasHeader(name)
-    //fun getHeader(name: String): String = helper.getHeader(name).getOrElse(null)
+
+    /**
+     * Does this email container a header with this name?
+     */
+    fun hasHeader(name: String): Boolean = helper.hasHeader(name)
+
+
+    fun getHeader(name: String): String = helper.getHeader(name)
 
     //
     // Commands
     //
 
-    //TODO
-
-    /**
-     * Debugging utility
-     */
-    //fun dumpStructure(): Unit = helper.dumpStructure
-
     /**
      * Check if this email was sent to the given email
      * @param email
      */
-    //fun wasSentTo(email: String): Boolean = helper.sentTo(email)
+    fun wasSentTo(email: String): Boolean = helper.wasSentTo(email)
 
     /**
      * Move email to the given folder
      * @param folderName
      */
-    //fun moveTo(folderName: String) = helper.moveTo(folderName)
+    fun moveTo(folderName: String) = helper.moveTo(folderName)
 
     /**
      * Delete this email, if possible will move to "Trash" folder instead of permanently deleting it
      */
-    //fun delete() = helper.delete()
+    fun delete() = helper.delete()
 
     /**
      * Delete this email.
      * @param permanent if true, permanently deleted, otherwise the email is moved to the "Trash" folder
      */
-    //fun delete(permanent: Boolean): Unit = helper.delete(permanent)
+    fun delete(permanent: Boolean): Unit = helper.delete(permanent)
+
+    //
+    //TODO
+    //
 
     //fun saveToFile(fileName: String): Unit = helper.saveToFile(fileName)
 
+    //fun dumpStructure(): Unit = helper.dumpStructure
+
+    //fun getAttachments(): Array[Attachment] = helper.attachments
 }
