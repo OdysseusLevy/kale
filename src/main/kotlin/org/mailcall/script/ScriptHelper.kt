@@ -1,10 +1,8 @@
 package org.mailcall.script
 
 import org.apache.logging.log4j.LogManager
-import org.mailcall.dynamodb.DynamoDbHelper
 import java.io.File
 import java.io.FileReader
-import java.nio.file.Files
 import javax.script.ScriptEngineManager
 
 /**
@@ -13,6 +11,8 @@ import javax.script.ScriptEngineManager
 class ScriptHelper {
 
     companion object {
+        val engineManager = ScriptEngineManager()
+
         val logger = LogManager.getLogger(ScriptHelper::class.java.name)
         fun getFileExtension(fullName: String): String {
             checkNotNull(fullName)
@@ -37,7 +37,6 @@ class ScriptHelper {
 
         logger.info("Executing ${script.getName()} with engine ${engineName}")
 
-        val engineManager = ScriptEngineManager()
         val engine = engineManager.getEngineByName(engineName)
         val scope = engine.createBindings()
 
