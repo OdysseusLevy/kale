@@ -1,13 +1,14 @@
 apply plugin: 'kotlin'
-
+apply plugin: "io.spring.dependency-management"
 
 buildscript {
-    ext.kotlin_version = '1.0.2'
+    ext.kotlin_version = '1.0.3'
     repositories {
         mavenCentral()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "io.spring.gradle:dependency-management-plugin:0.6.0.RELEASE"
     }
 }
 
@@ -15,6 +16,12 @@ repositories {
     mavenCentral()
     flatDir {
         dirs 'lib'
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.31'
     }
 }
 
@@ -30,7 +37,7 @@ dependencies {
 
     //compile fileTree(dir: 'libs', include: '*.jar')
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-
+    compile 'com.amazonaws:aws-java-sdk-dynamodb'
     compile "javax.mail:javax.mail-api:1.5.5"
     compile "org.apache.logging.log4j:log4j-api:2.5"
     compile "org.apache.logging.log4j:log4j-core:2.5"

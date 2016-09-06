@@ -40,8 +40,9 @@ class EmailAccount(val store: StoreWrapper, val tags: Tags) {
 
     fun getMessagesAfterUID(folderName: String, start: Long) = store.getMessagesAfterUID(folderName, start)
     fun getMessagesByUIDRange(folderName: String, startUID: Long, endUID: Long): List<MessageHelper> {
-        return 
+        return store.getMessagesByUIDRange(folderName, startUID, endUID)
     }
+
     //
     // Scanning
     //
@@ -123,7 +124,7 @@ class EmailAccount(val store: StoreWrapper, val tags: Tags) {
      * @param script
      */
     fun forEachReversed(folderName: String, limit: Int = -1, lambda: MailLambda) {
-        val messages = store.getMessages(folderName, limit)
+        val messages = store.getMessages(folderName, limit).reversed()
         runLambda(messages, lambda)
     }
 

@@ -9,8 +9,8 @@ import javax.mail.Message
 object MailUtils {
 
 
-    public fun getOrElse(value: Object, other: Object) = if (value != null) value else other
-    public fun getOrElse(value: String, other: String) = if (value != null) value else other
+    public fun getOrElse(value: Any?, other: Any) = if (value != null) value else other
+    public fun getOrElse(value: String?, other: String) = if (value != null) value else other
 
     public fun getUID(m: Message): Long {
 

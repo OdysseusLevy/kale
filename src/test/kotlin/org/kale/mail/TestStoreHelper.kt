@@ -16,6 +16,5 @@ class TestStoreHelper {
     public fun testGetMessages() {
 
 
-        val account = EmailAccountConfig(user= "odysseus@cosmosgame.org")
     }
 }
