@@ -8,7 +8,7 @@ import javax.script.ScriptEngineManager
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
-class ScriptHelper {
+open class ScriptHelper {
 
     companion object {
         val engineManager = ScriptEngineManager()

@@ -1,0 +1,44 @@
+nickname: MailRules
+
+BulkFolder: Bulk
+SpamFolder: Junk
+
+Rules:
+    - subjectContains: Emailscript
+      folder: Emailscript
+    - host: hai.com
+      folder: HAI
+    - host: facebookmail.com
+      folder: Social
+    - subjectContains: Jaiya
+      folder: friends
+    - subjectContains: Ulysses
+      folder: friends
+
+Folders:
+    Emailscript:
+        skipScan: true
+        whitelist: true
+        saveUnread: true
+        inboxDays: 7
+    HAI:
+        inboxMax: 5
+        whitelist: true
+    Notifications:
+        inboxMax: 2
+        whitelist: true
+    Newsletters:
+        inboxMax: 2
+        whitelist: true
+    Bulk:
+        folderDays: 70
+    Junk:
+        folderDays: 50
+        blacklist: true
+    Social:
+        inboxMax: 2
+        whitelist: true
+    friends:
+        saveUnread: true
+        inboxDays: 7
+        whitelist: true
