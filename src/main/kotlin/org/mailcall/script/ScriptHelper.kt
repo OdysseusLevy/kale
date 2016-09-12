@@ -14,17 +14,11 @@ open class ScriptHelper {
         val engineManager = ScriptEngineManager()
 
         val logger = LogManager.getLogger(ScriptHelper::class.java.name)
-        fun getFileExtension(fullName: String): String {
-            checkNotNull(fullName)
-            val fileName = File(fullName).name
-            val dotIndex = fileName.lastIndexOf('.')
-            return if (dotIndex == -1) "" else fileName.substring(dotIndex + 1)
-        }
     }
 
     fun getEngineName(f: File): String {
 
-        return when (getFileExtension(f.getName())) {
+        return when (f.extension) {
             "ruby" -> "ruby"
             "rb" ->  "ruby"
             "groovy" -> "groovy"

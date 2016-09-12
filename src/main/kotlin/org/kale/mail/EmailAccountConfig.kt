@@ -5,34 +5,36 @@ package org.kale.mail
  */
 data class EmailAccountConfig(
 
+        var nickname: String ="",
+
         /**
          * Set user name. For example a gmail user name would be something like myname@gmail.com
          * @group Properties
          */
-        val user: String = "",
+        var user: String = "",
 
         /**
          * Password (assumed to work with both imap and smtp)
          * @group Properties
          */
-        val password: String = "",
+        var password: String = "",
 
         /**
          * Server used to receive mail (using the IMAP protocol). For example gmail uses: imap.gmail.com
          * @group Properties
          */
-        val imapHost: String = "",
+        var imapHost: String = "",
 
         /**
          * Optional, Advanced property -- usually the default will work
          * @group Properties
          */
-        val imapPort: Int = -1,
+        var imapPort: Int = -1,
 
         /**
          * Server used to send out email. For example gmail uses smtp.gmail.com
          * @group Properties
          */
-        val smtpHost: String = "",
-        val smtpPort: Int = 465);
+        var smtpHost: String = "",
+        var smtpPort: Int = 465);
 
