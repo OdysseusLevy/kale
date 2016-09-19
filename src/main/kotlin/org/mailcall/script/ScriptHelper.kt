@@ -34,7 +34,7 @@ open class ScriptHelper {
         val engine = engineManager.getEngineByName(engineName)
         val scope = engine.createBindings()
 
-        configuration.addObjects(scope)
+        configuration.addObjectsToScope(scope)
         val reader = FileReader(script)
         return engine.eval(reader, scope)
     }

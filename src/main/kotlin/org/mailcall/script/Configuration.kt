@@ -7,5 +7,5 @@ import javax.script.Bindings
  */
 interface Configuration {
 
-    fun addObjects(bindings: Bindings)
+    fun addObjectsToScope(bindings: Bindings)
 }
