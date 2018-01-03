@@ -1,5 +1,6 @@
 package org.mailcall.yaml
 
+import org.kale.api.EmailAccount
 import org.kale.mail.EmailAccountConfig
 import org.mailcall.script.SimpleConfiguration
 import org.yaml.snakeyaml.Yaml
@@ -33,7 +34,7 @@ fun main(args: Array<String>) {
     // Utility for creating an EmailAccount would be good
     // Need notion of "named" objects (using duck typing?
 
-    //val accounts = helper.loadAccounts().map { account -> StoreWrapper(account) }.map { store -> EmailAccount(store, null)}
+    val accounts = helper.loadAccounts().map {config -> EmailAccount.create(config, YamlTags()) }
 
     val config = SimpleConfiguration()
     //config.putAll(accounts)

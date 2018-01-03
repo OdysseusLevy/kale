@@ -1,16 +1,16 @@
 package org.kale.api
 
-import org.kale.mail.FolderWrapper
-import org.kale.mail.MailCallback
-import org.kale.mail.MessageHelper
-import org.kale.mail.StoreWrapper
+import org.kale.mail.*
 import java.time.Instant
-import javax.mail.UIDFolder
 
 /**
  * @author Odysseus Levy (odysseus@cosmosgame.org)
  */
 class EmailAccount(val store: StoreWrapper, val tags: Tags) {
+
+    companion object {
+        fun create(config: EmailAccountConfig, tags: Tags) = EmailAccount(StoreWrapper(config), tags)
+    }
 
     fun runLambda(messages: List<MessageHelper>, lambda: MailLambda): Unit {
         messages.forEach { message -> lambda.run(Email(message, tags)) }
